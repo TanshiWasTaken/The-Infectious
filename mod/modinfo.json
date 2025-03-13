@@ -1,9 +1,9 @@
 ﻿{
-	"id": "author.slugtemplate",
-	"name": "Slugcat Template",
+	"id": "the-infectious",
+	"name": "The Infectious",
 	"version": "0.1.0",
-	"authors": "Author",
-	"description": "A template for making SlugBase mods.",
+	"authors": "axolotlfishies, Tanshi",
+	"description": "A continuously spreading substance, set out into the world by an unknown source.",
 	"requirements": [ "slime-cubed.slugbase" ],
 	"requirements_names": [ "SlugBase" ],
 	"tags": [ "Custom Slugcat" ]
