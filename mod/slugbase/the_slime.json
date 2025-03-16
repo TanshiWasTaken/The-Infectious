@@ -4,7 +4,7 @@
 	"description": "A continuously spreading substance, set out into the world by an unknown source.\nYour journey will be of rememberance, while a primal urge beckons for you to spread biomass.",
 	"features": {
 		"color": "f4b12a",
-		"theinfectuous/super_jump": 2,
+		"theinfectous/super_jump": 0.5,
 		"select_menu_scene": "Slugcat_Slimecat",
 		"select_menu_scene_ascended": "Ghost_Slimecat"
 	}
