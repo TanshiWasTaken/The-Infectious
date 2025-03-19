@@ -6,6 +6,8 @@ using System.Collections.Generic;
 using HUD;
 using RWCustom;
 using MoreSlugcats;
+using System.Security.Permissions;
+using System;
 
 namespace The_Infectious
 {
@@ -22,6 +24,7 @@ namespace The_Infectious
         //private float grabHoldTime = 0f;
 
         public static readonly PlayerFeature<float> SuperJump = PlayerFloat("theinfectious/super_jump");
+        public bool test = true;
 
         // Add hooks
         public void OnEnable()
@@ -30,13 +33,21 @@ namespace The_Infectious
 
             // Put your custom hooks here!
             On.Player.Jump += Player_Jump;
+            //On.RainWorldGame.
             On.Player.Update += Player_Update;
             On.HUD.FoodMeter.UpdateShowCount += FoodMeter_UpdateShowCount;
             On.HUD.FoodMeter.QuarterPipShower.Update += QuarterPipShower_Update;
             On.HUD.FoodMeter.MeterCircle.Update += MeterCircle_Update;
+            //On.HUD.FoodMeter.GameUpdate += FoodMeter_GameUpdate;
             //On.HUD.FoodMeter.MeterCircle.EatFade += MeterCircle_EatFade;
             //On.HUD.FoodMeter.MeterCircle.FoodPlop += MeterCircle_FoodPlop;
         }
+
+        //private void FoodMeter_GameUpdate(On.HUD.FoodMeter.orig_GameUpdate orig, FoodMeter self)
+        //{
+        //    self.quarterPipShower.quarterPipDelay = 45;
+        //    orig(self);
+        //}
 
         //private void MeterCircle_FoodPlop(On.HUD.FoodMeter.MeterCircle.orig_FoodPlop orig, HUD.FoodMeter.MeterCircle self)
         //{
@@ -182,6 +193,8 @@ namespace The_Infectious
         // Load any resources, such as sprites or sounds
         private void LoadResources(RainWorld rainWorld)
         {
+            test = true;
+            Logger.LogDebug($"Loading resources... | {DateTime.Now.ToString("HH:mm:ss:ff")}");
         }
 
         private void Player_Jump(On.Player.orig_Jump orig, Player self)
@@ -290,6 +303,11 @@ namespace The_Infectious
         private void QuarterPipShower_Update(On.HUD.FoodMeter.QuarterPipShower.orig_Update orig, HUD.FoodMeter.QuarterPipShower self)
         {
             {
+                if (test)
+                {
+                    self.quarterPipDelay = 45;
+                    test = false;
+                }
                 self.lastQuarterPipSin = self.quarterPipSin;
                 self.lastLightUp = self.lightUp;
                 if (self.displayQuarterFood > 0)
@@ -313,8 +331,10 @@ namespace The_Infectious
                     if (self.quarterPipDelay > 0)
                     {
                         self.quarterPipDelay--;
+
                         return;
                     }
+
                     self.quarterPipDelay = 20;
                     self.displayQuarterFood = currentQuarterFoodPoints;
                     self.lightUp = 1f;
