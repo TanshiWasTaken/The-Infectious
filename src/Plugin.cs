@@ -3,6 +3,10 @@ using UnityEngine;
 using SlugBase.Features;
 using static SlugBase.Features.FeatureTypes;
 using System.Collections.Generic;
+using HUD;
+using RWCustom;
+using MoreSlugcats;
+using System.Security.Permissions;
 using System;
 
 namespace The_Infectious
@@ -20,8 +24,7 @@ namespace The_Infectious
         //private float grabHoldTime = 0f;
 
         public static readonly PlayerFeature<float> SuperJump = PlayerFloat("theinfectious/super_jump");
-        private bool test = true;
-        private bool test2 = false;
+        public bool test = true;
 
         // Add hooks
         public void OnEnable()
@@ -191,7 +194,7 @@ namespace The_Infectious
         private void LoadResources(RainWorld rainWorld)
         {
             test = true;
-            Logger.LogDebug($"Loading resources... | {DateTime.Now:HH:mm:ss:ff}");
+            Logger.LogDebug($"Loading resources... | {DateTime.Now.ToString("HH:mm:ss:ff")}");
         }
 
         private void Player_Jump(On.Player.orig_Jump orig, Player self)
@@ -229,9 +232,8 @@ namespace The_Infectious
 
                     //if (grabHoldTime >= requiredHoldTime)
                     //{
-                    Debug.Log("[Duplicator] Duplication triggered!");
-                    test2 = true;
-                    TryDuplicateItem(self);
+                        Debug.Log("[Duplicator] Duplication triggered!");
+                        TryDuplicateItem(self);
                         // grabHoldTime = 0f; // Reset
                         // self.swallowAndRegurgitateCounter = 0; // Prevent swallowing
                     //}
@@ -338,12 +340,7 @@ namespace The_Infectious
                     self.lightUp = 1f;
                     if (self.owner.showCount < self.owner.circles.Count)
                     {
-                        if (test2 == false)
-                        {
-                            self.owner.circles[self.owner.showCount].QuarterCirclePlop();
-                            return;
-                        }
-                        test2 = false;
+                        self.owner.circles[self.owner.showCount].QuarterCirclePlop();
                     }
                 }
                 else if (currentQuarterFoodPoints < self.displayQuarterFood)
@@ -367,11 +364,7 @@ namespace The_Infectious
                     self.lightUp = 1f;
                     if (self.owner.showCount > 0)
                     {
-                        self.owner.circles[self.owner.showCount].EatFade();
-                    }
-                    else if (self.owner.showCount == 0)
-                    {
-                        self.owner.circles[0].EatFade();
+                        self.owner.circles[self.owner.showCount].QuarterCirclePlop();
                     }
                 }
                 //Logger.LogDebug("QuarterPipShower_Update called.");
@@ -417,74 +410,68 @@ namespace The_Infectious
 
             AbstractPhysicalObject newItem;
 
-            // turn this if and else into a case and switch statement
-            if (originalItem != null)
+            if (originalItem.type == AbstractPhysicalObject.AbstractObjectType.Spear)
             {
-                Logger.LogDebug(originalItem.type);
+                newItem = new AbstractSpear(
+                    self.room.world,
+                    null,
+                    self.room.GetWorldCoordinate(self.mainBodyChunk.pos),
+                    self.room.game.GetNewID(),
+                    false
+                );
+                Logger.LogDebug("New spear created.");
+            }
+            else
+            {
+                newItem = new AbstractPhysicalObject(
+                    self.room.world,
+                    originalItem.type,
+                    null,
+                    self.room.GetWorldCoordinate(self.mainBodyChunk.pos),
+                    self.room.game.GetNewID()
+                );
+                Logger.LogDebug("New object created.");
+            }
 
-                switch (originalItem.type.ToString())
+            if (newItem != null)
+            {
+                // Add the new item to the world and the room
+                self.room.abstractRoom.AddEntity(newItem);
+
+                Logger.LogDebug("New item added to world.");
+
+                // Realize the object in the room to make it visible and active
+                newItem.RealizeInRoom();
+
+                Logger.LogDebug("New item created and added to room.");
+
+                // Check if the new item is a spear
+                if (newItem.type == AbstractPhysicalObject.AbstractObjectType.Spear)
                 {
-                    case "Spear":
-                        newItem = new AbstractSpear(
-                            self.room.world,
-                            null,
-                            self.room.GetWorldCoordinate(self.mainBodyChunk.pos),
-                            self.room.game.GetNewID(),
-                            false
-                        );
-                        Logger.LogDebug("New spear created.");
-                        break;
-                    default:
-                        newItem = new AbstractPhysicalObject(
-                            self.room.world,
-                            originalItem.type,
-                            null,
-                            self.room.GetWorldCoordinate(self.mainBodyChunk.pos),
-                            self.room.game.GetNewID()
-                        );
-                        Logger.LogDebug("New object created.");
-                        break;
-                }
-
-
-
-                if (newItem != null)
-                {
-                    // Add the new item to the world and the room
-                    self.room.abstractRoom.AddEntity(newItem);
-
-                    Logger.LogDebug("New item added to world.");
-
-                    // Realize the object in the room to make it visible and active
-                    newItem.RealizeInRoom();
-
-                    Logger.LogDebug("New item created and added to room.");
-
-                    // Check if the new item is a spear
-                    if (false)
-                    {
-                    }
-                    else
-                    {
-                        // If it's not a spear, check for a free hand to grab it
-                        int freeHand = self.grasps[0] == null ? 0 : self.grasps[1] == null ? 1 : -1;
-                        if (freeHand != -1)
-                        {
-                            self.SlugcatGrab(newItem.realizedObject, freeHand);
-                            Logger.LogDebug("New item grabbed with free hand.");
-                        }
-                        else
-                        {
-                            // Otherwise, drop the new item in front of the player
-                            newItem.realizedObject.firstChunk.HardSetPosition(self.mainBodyChunk.pos + new Vector2(10f, 0f)); // Slight offset
-                            Logger.LogDebug("New item dropped in front of the player.");
-                        }
-                    }
+                    // Drop the spear on the ground in front of the player, since Slugcat cannot hold two spears
+                    newItem.realizedObject.firstChunk.HardSetPosition(self.mainBodyChunk.pos + new Vector2(10f, 0f)); // Slight offset
+                    Logger.LogDebug("New spear dropped in front of the player.");
                 }
                 else
                 {
-                    Logger.LogDebug("Failed to create a new item.");
+                    // If it's not a spear, check for a free hand to grab it
+                    int freeHand = self.grasps[0] == null ? 0 : self.grasps[1] == null ? 1 : -1;
+                    if (freeHand != -1)
+                    {
+                        self.SlugcatGrab(newItem.realizedObject, freeHand);
+                        Logger.LogDebug("New item grabbed with free hand.");
+                    }
+                    else
+                    {
+                        // Otherwise, drop the new item in front of the player
+                        newItem.realizedObject.firstChunk.HardSetPosition(self.mainBodyChunk.pos + new Vector2(10f, 0f)); // Slight offset
+                        Logger.LogDebug("New item dropped in front of the player.");
+                    }
                 }
+            }
+            else
+            {
+                Logger.LogDebug("Failed to create a new item.");
             }
         }
 
